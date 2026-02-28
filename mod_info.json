@@ -1,0 +1,14 @@
+{
+  "id": "nexus_dashboard",
+  "name": "NexusDashboard",
+  "author": "NexusDev",
+  "version": "0.9.0-beta",
+  "description": "Fleet dashboard built on NexusUI framework. Displays fleet composition, combat readiness, faction relations, cargo, and colonies in a live in-game overlay panel.",
+  "gameVersion": "0.98a-RC7",
+  "modPlugin": "com.nexusdashboard.DashboardModPlugin",
+  "jars": ["jars/NexusDashboard.jar"],
+  "dependencies": [
+    {"id": "lw_lazylib", "name": "LazyLib"},
+    {"id": "nexus_ui", "name": "NexusUI"}
+  ]
+}

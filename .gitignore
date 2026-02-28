@@ -1,0 +1,23 @@
+# Java class files
+*.class
+
+# Build output
+build/
+out/
+bin/
+
+# IDE files
+.idea/
+*.iml
+.settings/
+.project
+.classpath
+*.swp
+*.swo
+*~
+.vscode/
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini

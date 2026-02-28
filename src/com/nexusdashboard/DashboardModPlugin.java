@@ -1,7 +1,7 @@
 package com.nexusdashboard;
 
 import com.fs.starfarer.api.BaseModPlugin;
-import com.nexusui.overlay.NexusWebFrame;
+import com.nexusui.overlay.NexusFrame;
 
 import org.apache.log4j.Logger;
 
@@ -23,7 +23,7 @@ public class DashboardModPlugin extends BaseModPlugin {
     @Override
     public void onGameLoad(boolean newGame) {
         // Register our dashboard page with NexusUI
-        NexusWebFrame.registerPage(new DashboardPage());
+        NexusFrame.registerPage(new DashboardPage());
         log.info("NexusDashboard: Dashboard page registered with NexusUI");
     }
 }

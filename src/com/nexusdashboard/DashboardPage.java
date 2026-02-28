@@ -2,7 +2,7 @@ package com.nexusdashboard;
 
 import com.nexusui.api.NexusPage;
 import com.nexusui.bridge.GameDataBridge;
-import com.nexusui.overlay.NexusWebFrame;
+import com.nexusui.overlay.NexusFrame;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -36,15 +36,14 @@ public class DashboardPage implements NexusPage {
     }
 
     public void refresh() {
-        // Read cached JSON directly from the bridge — no HTTP round-trips
+        // Read JSONObject references directly — zero serialization, zero parsing
         GameDataBridge bridge = GameDataBridge.getInstance();
         if (bridge == null) return;
-        try { gameData = new JSONObject(bridge.getGameInfoJson()); } catch (Exception e) { /* keep old */ }
-        try { fleetData = new JSONObject(bridge.getFleetJson()); } catch (Exception e) { /* keep old */ }
-        try { coloniesData = new JSONObject(bridge.getColoniesJson()); } catch (Exception e) { /* keep old */ }
-        try { cargoData = new JSONObject(bridge.getCargoJson()); } catch (Exception e) { /* keep old */ }
-        try { factionsData = new JSONObject(bridge.getFactionsJson()); } catch (Exception e) { /* keep old */ }
-        // Repaint is handled by NexusWebFrame's refresh loop
+        gameData = bridge.getGameInfoObj();
+        fleetData = bridge.getFleetObj();
+        coloniesData = bridge.getColoniesObj();
+        cargoData = bridge.getCargoObj();
+        factionsData = bridge.getFactionsObj();
     }
 
     // ========================================================================
@@ -53,7 +52,7 @@ public class DashboardPage implements NexusPage {
     private class DashboardPanel extends JPanel {
 
         DashboardPanel() {
-            setBackground(NexusWebFrame.BG_PRIMARY);
+            setBackground(NexusFrame.BG_PRIMARY);
         }
 
         public Dimension getPreferredSize() {
@@ -105,35 +104,35 @@ public class DashboardPage implements NexusPage {
         // --- Header Bar ---
         private int drawHeaderBar(Graphics2D g2, int x, int y, int w) {
             int h = 50;
-            NexusWebFrame.drawCardBg(g2, x, y, w, h);
+            NexusFrame.drawCardBg(g2, x, y, w, h);
 
-            g2.setFont(NexusWebFrame.FONT_BODY);
+            g2.setFont(NexusFrame.FONT_BODY);
             String name = gameData.optString("playerName", "---");
-            g2.setColor(NexusWebFrame.TEXT_PRIMARY);
+            g2.setColor(NexusFrame.TEXT_PRIMARY);
             g2.drawString(name, x + 16, y + 22);
 
-            g2.setFont(NexusWebFrame.FONT_SMALL);
-            g2.setColor(NexusWebFrame.TEXT_SECONDARY);
+            g2.setFont(NexusFrame.FONT_SMALL);
+            g2.setColor(NexusFrame.TEXT_SECONDARY);
             g2.drawString(gameData.optString("faction", ""), x + 16, y + 38);
 
             // Right-aligned stats
             int rx = x + w - 16;
-            g2.setFont(NexusWebFrame.FONT_MONO);
+            g2.setFont(NexusFrame.FONT_MONO);
 
             String date = gameData.optString("dateString", "---");
-            g2.setColor(NexusWebFrame.TEXT_SECONDARY);
+            g2.setColor(NexusFrame.TEXT_SECONDARY);
             int dateW = g2.getFontMetrics().stringWidth(date);
             g2.drawString(date, rx - dateW, y + 22);
 
             long credits = gameData.optLong("credits", 0);
-            String credStr = NexusWebFrame.formatNumber(credits) + " credits";
-            g2.setColor(NexusWebFrame.ORANGE);
+            String credStr = NexusFrame.formatNumber(credits) + " credits";
+            g2.setColor(NexusFrame.ORANGE);
             int credW = g2.getFontMetrics().stringWidth(credStr);
             g2.drawString(credStr, rx - credW, y + 38);
 
             int ships = gameData.optInt("totalShips", 0);
             String shipStr = ships + " ships";
-            g2.setColor(NexusWebFrame.CYAN);
+            g2.setColor(NexusFrame.CYAN);
             int shipW = g2.getFontMetrics().stringWidth(shipStr);
             g2.drawString(shipStr, rx - credW - shipW - 24, y + 38);
 
@@ -158,19 +157,19 @@ public class DashboardPage implements NexusPage {
             int bodyH = (barH + barGap) * 5 + bodyPad * 2;
             int cardH = headerH + bodyH;
 
-            NexusWebFrame.drawCardBg(g2, x, y, w, cardH);
-            NexusWebFrame.drawCardHeader(g2, x, y, w, "FLEET COMPOSITION",
+            NexusFrame.drawCardBg(g2, x, y, w, cardH);
+            NexusFrame.drawCardHeader(g2, x, y, w, "FLEET COMPOSITION",
                 fleetData.optInt("totalShips", 0) + " ships");
 
             int by = y + headerH + bodyPad;
             String[] labels = {"Capital", "Cruiser", "Destroyer", "Frigate", "Fighter"};
             int[] values = {capitals, cruisers, destroyers, frigates, fighters};
-            Color[] colors = {NexusWebFrame.RED, NexusWebFrame.ORANGE, NexusWebFrame.YELLOW,
-                              NexusWebFrame.CYAN, NexusWebFrame.PURPLE};
+            Color[] colors = {NexusFrame.RED, NexusFrame.ORANGE, NexusFrame.YELLOW,
+                              NexusFrame.CYAN, NexusFrame.PURPLE};
 
             for (int i = 0; i < labels.length; i++) {
                 float pct = (float) values[i] / total;
-                NexusWebFrame.drawLabeledBar(g2, x + bodyPad, by, w - bodyPad * 2, barH,
+                NexusFrame.drawLabeledBar(g2, x + bodyPad, by, w - bodyPad * 2, barH,
                     labels[i], String.valueOf(values[i]), pct, colors[i]);
                 by += barH + barGap;
             }
@@ -190,8 +189,8 @@ public class DashboardPage implements NexusPage {
             int bodyH = Math.max((barH + barGap) * count + bodyPad * 2, 60);
             int cardH = headerH + bodyH;
 
-            NexusWebFrame.drawCardBg(g2, x, y, w, cardH);
-            NexusWebFrame.drawCardHeader(g2, x, y, w, "COMBAT READINESS", "");
+            NexusFrame.drawCardBg(g2, x, y, w, cardH);
+            NexusFrame.drawCardHeader(g2, x, y, w, "COMBAT READINESS", "");
 
             int by = y + headerH + bodyPad;
             if (members != null) {
@@ -202,10 +201,10 @@ public class DashboardPage implements NexusPage {
                     if (name.isEmpty()) name = m.optString("hullName", "?");
                     int cr = m.optInt("cr", 0);
                     float pct = cr / 100f;
-                    Color barColor = cr >= 70 ? NexusWebFrame.GREEN :
-                                     cr >= 40 ? NexusWebFrame.ORANGE : NexusWebFrame.RED;
-                    NexusWebFrame.drawLabeledBar(g2, x + bodyPad, by, w - bodyPad * 2, barH,
-                        NexusWebFrame.truncate(name, 16), cr + "%", pct, barColor);
+                    Color barColor = cr >= 70 ? NexusFrame.GREEN :
+                                     cr >= 40 ? NexusFrame.ORANGE : NexusFrame.RED;
+                    NexusFrame.drawLabeledBar(g2, x + bodyPad, by, w - bodyPad * 2, barH,
+                        NexusFrame.truncate(name, 16), cr + "%", pct, barColor);
                     by += barH + barGap;
                 }
             }
@@ -225,8 +224,8 @@ public class DashboardPage implements NexusPage {
             int bodyH = Math.max((barH + barGap) * count + bodyPad * 2, 60);
             int cardH = headerH + bodyH;
 
-            NexusWebFrame.drawCardBg(g2, x, y, w, cardH);
-            NexusWebFrame.drawCardHeader(g2, x, y, w, "FACTION RELATIONS", "");
+            NexusFrame.drawCardBg(g2, x, y, w, cardH);
+            NexusFrame.drawCardHeader(g2, x, y, w, "FACTION RELATIONS", "");
 
             int by = y + headerH + bodyPad;
             if (factions != null) {
@@ -235,10 +234,10 @@ public class DashboardPage implements NexusPage {
                     if (f == null) continue;
                     String name = f.optString("name", "?");
                     int rel = f.optInt("relation", 0);
-                    Color c = rel >= 50 ? NexusWebFrame.GREEN :
-                              rel >= 0 ? NexusWebFrame.CYAN :
-                              rel >= -50 ? NexusWebFrame.ORANGE : NexusWebFrame.RED;
-                    NexusWebFrame.drawRelationBar(g2, x + bodyPad, by, w - bodyPad * 2, barH,
+                    Color c = rel >= 50 ? NexusFrame.GREEN :
+                              rel >= 0 ? NexusFrame.CYAN :
+                              rel >= -50 ? NexusFrame.ORANGE : NexusFrame.RED;
+                    NexusFrame.drawRelationBar(g2, x + bodyPad, by, w - bodyPad * 2, barH,
                         name, rel, c);
                     by += barH + barGap;
                 }
@@ -258,26 +257,26 @@ public class DashboardPage implements NexusPage {
             int bodyH = Math.max(lineH * (count + 4) + bodyPad * 2, 60);
             int cardH = headerH + bodyH;
 
-            NexusWebFrame.drawCardBg(g2, x, y, w, cardH);
+            NexusFrame.drawCardBg(g2, x, y, w, cardH);
             int spaceUsed = cargoData.optInt("spaceUsed", 0);
             int maxSpace = cargoData.optInt("maxSpace", 0);
-            NexusWebFrame.drawCardHeader(g2, x, y, w, "CARGO HOLD", spaceUsed + "/" + maxSpace);
+            NexusFrame.drawCardHeader(g2, x, y, w, "CARGO HOLD", spaceUsed + "/" + maxSpace);
 
             int by = y + headerH + bodyPad;
-            g2.setFont(NexusWebFrame.FONT_MONO);
+            g2.setFont(NexusFrame.FONT_MONO);
 
             // Summary row
             String[] summaryLabels = {"Fuel", "Supplies", "Crew", "Marines"};
             String[] summaryKeys = {"fuel", "supplies", "crew", "marines"};
-            Color[] summaryColors = {NexusWebFrame.ORANGE, NexusWebFrame.CYAN,
-                                     NexusWebFrame.TEXT_PRIMARY, NexusWebFrame.RED};
+            Color[] summaryColors = {NexusFrame.ORANGE, NexusFrame.CYAN,
+                                     NexusFrame.TEXT_PRIMARY, NexusFrame.RED};
 
             for (int i = 0; i < summaryLabels.length; i++) {
                 int val = cargoData.optInt(summaryKeys[i], 0);
-                g2.setColor(NexusWebFrame.TEXT_SECONDARY);
+                g2.setColor(NexusFrame.TEXT_SECONDARY);
                 g2.drawString(summaryLabels[i], x + bodyPad, by + 13);
                 g2.setColor(summaryColors[i]);
-                String valStr = NexusWebFrame.formatNumber(val);
+                String valStr = NexusFrame.formatNumber(val);
                 int valW = g2.getFontMetrics().stringWidth(valStr);
                 g2.drawString(valStr, x + w - bodyPad - valW, by + 13);
                 by += lineH;
@@ -285,7 +284,7 @@ public class DashboardPage implements NexusPage {
 
             // Separator
             by += 4;
-            g2.setColor(NexusWebFrame.BORDER);
+            g2.setColor(NexusFrame.BORDER);
             g2.drawLine(x + bodyPad, by, x + w - bodyPad, by);
             by += 8;
 
@@ -296,10 +295,10 @@ public class DashboardPage implements NexusPage {
                     if (item == null) continue;
                     String id = item.optString("id", "?");
                     int qty = item.optInt("quantity", 0);
-                    g2.setColor(NexusWebFrame.TEXT_SECONDARY);
-                    g2.drawString(NexusWebFrame.prettifyId(id), x + bodyPad, by + 13);
-                    g2.setColor(NexusWebFrame.TEXT_PRIMARY);
-                    String qtyStr = NexusWebFrame.formatNumber(qty);
+                    g2.setColor(NexusFrame.TEXT_SECONDARY);
+                    g2.drawString(NexusFrame.prettifyId(id), x + bodyPad, by + 13);
+                    g2.setColor(NexusFrame.TEXT_PRIMARY);
+                    String qtyStr = NexusFrame.formatNumber(qty);
                     int qtyW = g2.getFontMetrics().stringWidth(qtyStr);
                     g2.drawString(qtyStr, x + w - bodyPad - qtyW, by + 13);
                     by += lineH;
@@ -320,16 +319,16 @@ public class DashboardPage implements NexusPage {
             int bodyH = Math.max(rowH * count + bodyPad * 2 + 20, 60);
             int cardH = headerH + bodyH;
 
-            NexusWebFrame.drawCardBg(g2, x, y, w, cardH);
+            NexusFrame.drawCardBg(g2, x, y, w, cardH);
             long totalIncome = coloniesData.optLong("totalIncome", 0);
-            NexusWebFrame.drawCardHeader(g2, x, y, w, "COLONIES",
-                NexusWebFrame.formatNumber(totalIncome) + "/month");
+            NexusFrame.drawCardHeader(g2, x, y, w, "COLONIES",
+                NexusFrame.formatNumber(totalIncome) + "/month");
 
             int by = y + headerH + bodyPad;
 
             // Column headers
-            g2.setFont(NexusWebFrame.FONT_SMALL);
-            g2.setColor(NexusWebFrame.TEXT_MUTED);
+            g2.setFont(NexusFrame.FONT_SMALL);
+            g2.setColor(NexusFrame.TEXT_MUTED);
             g2.drawString("COLONY", x + bodyPad, by + 10);
             g2.drawString("SIZE", x + 220, by + 10);
             g2.drawString("STABILITY", x + 280, by + 10);
@@ -337,26 +336,26 @@ public class DashboardPage implements NexusPage {
             by += 20;
 
             if (colonies != null) {
-                g2.setFont(NexusWebFrame.FONT_MONO);
+                g2.setFont(NexusFrame.FONT_MONO);
                 for (int i = 0; i < colonies.length(); i++) {
                     JSONObject c = colonies.optJSONObject(i);
                     if (c == null) continue;
 
-                    g2.setColor(NexusWebFrame.CYAN);
+                    g2.setColor(NexusFrame.CYAN);
                     g2.drawString(c.optString("name", "?"), x + bodyPad, by + 18);
 
-                    g2.setColor(NexusWebFrame.TEXT_PRIMARY);
+                    g2.setColor(NexusFrame.TEXT_PRIMARY);
                     g2.drawString(String.valueOf(c.optInt("size", 0)), x + 220, by + 18);
 
                     double stab = c.optDouble("stability", 0);
-                    Color stabColor = stab >= 7 ? NexusWebFrame.GREEN :
-                                      stab >= 4 ? NexusWebFrame.ORANGE : NexusWebFrame.RED;
+                    Color stabColor = stab >= 7 ? NexusFrame.GREEN :
+                                      stab >= 4 ? NexusFrame.ORANGE : NexusFrame.RED;
                     g2.setColor(stabColor);
                     g2.drawString(String.format("%.1f", stab), x + 280, by + 18);
 
                     long income = c.optLong("netIncome", 0);
-                    g2.setColor(income >= 0 ? NexusWebFrame.GREEN : NexusWebFrame.RED);
-                    String incStr = NexusWebFrame.formatNumber(income);
+                    g2.setColor(income >= 0 ? NexusFrame.GREEN : NexusFrame.RED);
+                    String incStr = NexusFrame.formatNumber(income);
                     int incW = g2.getFontMetrics().stringWidth(incStr);
                     g2.drawString(incStr, x + w - bodyPad - incW, by + 18);
 
